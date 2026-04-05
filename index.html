@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Théorie des Curseurs</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: #f5f7fa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+#login {
+    text-align: center;
+}
+
+input[type="password"] {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+button {
+    padding: 10px 15px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #1e2a38;
+    color: white;
+    cursor: pointer;
+}
+
+.container {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    width: 360px;
+}
+
+.title {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.total {
+    text-align: center;
+    font-size: 28px;
+    margin: 15px 0 25px;
+    font-weight: 600;
+}
+
+.slider-group {
+    margin-bottom: 18px;
+}
+
+label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+input[type="range"] {
+    width: 100%;
+}
+
+.nav {
+    margin-top: 20px;
+    text-align: center;
+}
+
+canvas {
+    margin-top: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="login">
+    <h2>Accès privé</h2>
+    <input type="password" id="password" placeholder="Mot de passe">
+    <br>
+    <button onclick="checkPassword()">Entrer</button>
+</div>
+
+<div id="app" style="display:none;">
+    <div class="container">
+
+        <div id="page1">
+            <div class="title">Théorie des Curseurs</div>
+            <div id="total" class="total">Total : 0</div>
+            <div id="sliders"></div>
+
+            <button onclick="saveData()">Enregistrer</button>
+
+            <div class="nav">
+                <button onclick="showPage2()">Voir évolution</button>
+            </div>
+        </div>
+
+        <div id="page2" style="display:none;">
+            <div class="title">Évolution</div>
+
+            <canvas id="chart"></canvas>
+
+            <div class="nav">
+                <button onclick="showPage1()">Retour</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+const PASSWORD = "1234";
+
+function checkPassword() {
+    const input = document.getElementById("password").value;
+    if (input === PASSWORD) {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("app").style.display = "block";
+    } else {
+        alert("Mot de passe incorrect");
+    }
+}
+
+const labels = [
+    "🏡 Famille",
+    "🍺 Social",
+    "❤️ Cœur",
+    "🎥 Travail",
+    "💪 Santé"
+];
+
+let values = [0,0,0,0,0];
+
+const slidersContainer = document.getElementById("sliders");
+const totalDisplay = document.getElementById("total");
+
+function updateTotal() {
+    const total = values.reduce((a,b)=>a+b,0);
+    totalDisplay.textContent = "Total : " + total;
+
+    if (total === 50) {
+        totalDisplay.style.color = "green";
+    } else {
+        totalDisplay.style.color = "orange";
+    }
+}
+
+function createSlider(index) {
+    const group = document.createElement("div");
+    group.className = "slider-group";
+
+    const label = document.createElement("label");
+    label.innerHTML = `${labels[index]} <span id="val${index}">0</span>`;
+
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = 0;
+    slider.max = 20;
+
+    slider.oninput = (e) => {
+        values[index] = parseInt(e.target.value);
+        document.getElementById("val"+index).textContent = e.target.value;
+        updateTotal();
+    };
+
+    group.appendChild(label);
+    group.appendChild(slider);
+    slidersContainer.appendChild(group);
+}
+
+labels.forEach((_,i)=>createSlider(i));
+updateTotal();
+
+function saveData() {
+    const data = JSON.parse(localStorage.getItem("history") || "[]");
+
+    data.push({
+        date: new Date().toLocaleDateString(),
+        values: [...values]
+    });
+
+    localStorage.setItem("history", JSON.stringify(data));
+    alert("Enregistré");
+}
+
+function showPage2() {
+    document.getElementById("page1").style.display = "none";
+    document.getElementById("page2").style.display = "block";
+    renderChart();
+}
+
+function showPage1() {
+    document.getElementById("page2").style.display = "none";
+    document.getElementById("page1").style.display = "block";
+}
+
+function renderChart() {
+    const data = JSON.parse(localStorage.getItem("history") || "[]");
+
+    const dates = data.map(d => d.date);
+
+    const datasets = labels.map((label, i) => ({
+        label,
+        data: data.map(d => d.values[i]),
+        fill: false
+    }));
+
+    new Chart(document.getElementById("chart"), {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: datasets
+        }
+    });
+}
+</script>
+
+</body>
+</html>
